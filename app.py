@@ -1,61 +1,96 @@
+import os
+
+from flask import Flask, render_template, request, Response, jsonify,redirect,url_for
+import database as dbase
+
 import numpy as np
-from flask import Flask, request, jsonify, render_template, url_for
-import pickle
-from sklearn import svm
-import streamlit as st
+import pandas as pd 
+from sklearn.ensemble import RandomForestClassifier
+import keras
+db= dbase.dbConnection()
+app = Flask(__name__)
+
+@app.route("/")
+def hello_world():
+
+    new_model = keras.models.load_model('model.h5')
+    products = db['products']
+    productsReceived=products.find()
+    name = os.environ.get("NAME", "World")
+    return "Hello {}!".format(name)
 
 
-# Path del modelo preentrenado
-MODEL_PATH = 'models/pickle_model.pkl'
+
+#Add
+@app.route('/products',methods=['POST'])
+def addProduct():
+    products = db['products']
+    name = request.form['name']
+    price = request.form['price']
+    quantity = request.form['quantity']
 
 
-# Se recibe la imagen y el modelo, devuelve la predicción
-def model_prediction(x_in, model):
+    if name and price and quantity:
+        mydict = { "name": name, "price": price, "quantity": quantity }
+        products.insert_one(mydict)
+        response = jsonify({
+            'name':name,
+            'price':price,
+            'quantity':quantity
+        })
+        return redirect(url_for('home'))
+    else:
+        return notFound()
 
-    x = np.asarray(x_in).reshape(1,-1)
-    preds=model.predict(x)
 
-    return preds
+#Delete
+@app.route('/delete/<string:product_name>')
+def delete(product_name):
+    products = db['products']
+    products.delete_one({'name':product_name})
+    return redirect(url_for('home'))
 
 
-def main():
+#Edit
+@app.route('/edit/<string:product_name>',methods=['GET','POST'])
+def edit(product_name):
     
-    model=''
+        products = db['products']
+        name = request.form['name']
+        price = request.form['price']
+        quantity = request.form['quantity']
 
-    # Se carga el modelo
-    if model=='':
-        with open(MODEL_PATH, 'rb') as file:
-            model = pickle.load(file)
+        if name and price and quantity:
+            myquery = { "name": product_name }
+            newvalues = { "$set": { "name": name, "price": price, "quantity": quantity } }
+            products.update_one(myquery, newvalues)
+            response = jsonify({
+                'message':'Producto' + product_name + 'Actualizado'
+            })
+            name = os.environ.get("NAME", "World")
+            return "Hello {}!".format(name)
+        else:
+            return notFound()
     
-    # Título
-    html_temp = """
-    <h1 style="color:#181082;text-align:center;">SISTEMA DE RECOMENDACIÓN PARA CULTIVO </h1>
-    </div>
-    """
-    st.markdown(html_temp,unsafe_allow_html=True)
 
-    # Lecctura de datos
-    #Datos = st.text_input("Ingrese los valores : N P K Temp Hum pH lluvia:")
-    N = st.text_input("Nitrógeno:")
-    P = st.text_input("Fósforo:")
-    K = st.text_input("Potasio:")
-    Temp = st.text_input("Temperatura:")
-    Hum = st.text_input("Humedad:")
-    pH = st.text_input("pH:")
-    rain = st.text_input("Lluvia:")
-    
-    # El botón predicción se usa para iniciar el procesamiento
-    if st.button("Predicción :"): 
-        #x_in = list(np.float_((Datos.title().split('\t'))))
-        x_in =[np.float_(N.title()),
-                    np.float_(P.title()),
-                    np.float_(K.title()),
-                    np.float_(Temp.title()),
-                    np.float_(Hum.title()),
-                    np.float_(pH.title()),
-                    np.float_(rain.title())]
-        predictS = model_prediction(x_in, model)
-        st.success('EL CULTIVO RECOMENDADO ES: {}'.format(predictS[0]).upper())
 
-if __name__ == '__main__':
-    main()
+
+@app.errorhandler(404)
+def notFound(error=None):
+    message = {
+        'message':'No encontrado: ' + request.url,
+        'status':'404 Not Found'
+    }
+    response = jsonify(message)
+    response.status_code = 404
+    return response
+
+
+#Machine
+@app.route('/machine',methods=['GET','POST'])
+def machine():
+    return 'hola'
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

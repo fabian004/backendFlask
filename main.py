@@ -13,7 +13,7 @@ app = Flask(__name__)
 @app.route("/")
 def hello_world():
 
-    new_model = keras.models.load_model('path_to_my_model.h5')
+    new_model = keras.models.load_model('model.h5')
     products = db['products']
     productsReceived=products.find()
     name = os.environ.get("NAME", "World")
