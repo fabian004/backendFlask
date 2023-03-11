@@ -5,13 +5,17 @@ import database as dbase
 
 import numpy as np
 import pandas as pd 
+
 import torch
+
+
 db= dbase.dbConnection()
 app = Flask(__name__)
 
 @app.route("/")
 def hello_world():
-
+    model.load_state_dict(torch.load('resNet2.pth'))
+    model.eval()
     products = db['products']
     productsReceived=products.find()
     name = os.environ.get("NAME", "World")
