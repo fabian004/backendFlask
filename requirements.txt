@@ -4,7 +4,9 @@ pymongo
 certifi
 numpy
 pandas
-tensorflow
+torch 
+torchvision 
+torchaudio
 keras
 matplotlib
 seaborn

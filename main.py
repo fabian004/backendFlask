@@ -5,15 +5,13 @@ import database as dbase
 
 import numpy as np
 import pandas as pd 
-from sklearn.ensemble import RandomForestClassifier
-import keras
+import torch
 db= dbase.dbConnection()
 app = Flask(__name__)
 
 @app.route("/")
 def hello_world():
 
-    new_model = keras.models.load_model('model.h5')
     products = db['products']
     productsReceived=products.find()
     name = os.environ.get("NAME", "World")
