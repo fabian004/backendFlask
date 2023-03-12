@@ -8,6 +8,7 @@ import pandas as pd
 
 import torch
 from PIL import Image
+import torchvision.models as models
 from torchvision import transforms
 
 db= dbase.dbConnection()
@@ -16,6 +17,8 @@ app = Flask(__name__)
 @app.route("/")
 def hello_world():
     classLabels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+    # Define the ResNet model
+    model = models.resnet18()
     model.load_state_dict(torch.load('resNet2.pth'))
     model.eval()
 
