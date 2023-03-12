@@ -4,6 +4,7 @@ pymongo
 certifi
 numpy
 pandas
+pillow
 torch 
 torchvision 
 torchaudio

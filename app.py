@@ -7,19 +7,37 @@ import numpy as np
 import pandas as pd 
 
 import torch
-
+from PIL import Image
+from torchvision import transforms
 
 db= dbase.dbConnection()
 app = Flask(__name__)
 
 @app.route("/")
 def hello_world():
+    classLabels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
     model.load_state_dict(torch.load('resNet2.pth'))
     model.eval()
-    products = db['products']
-    productsReceived=products.find()
-    name = os.environ.get("NAME", "World")
-    return "Hello {}!".format(name)
+
+    # Definir transformaciones para los datos de entrada
+    transform = transforms.Compose([
+        transforms.Resize(48),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    # Cargar una imagen de prueba y aplicar las transformaciones
+    img = Image.open("monstruonojado.jpg").convert("L")
+    img_tensor = transform(img).unsqueeze(0)
+
+    # Hacer una predicción
+    with torch.no_grad():
+        output = model(img_tensor)
+        # Obtener la clase predicha
+        _, pred = torch.max(output, dim=1)
+        pred_label = classLabels[pred.item()]
+        return pred_label
+        print(f"La imagen es de la clase: {pred_label}")
 
 
 
@@ -91,7 +109,7 @@ def notFound(error=None):
 #Machine
 @app.route('/machine',methods=['GET','POST'])
 def machine():
-    return 'hola'
+    return 'hola x2'
 
 
 if __name__ == "__main__":
